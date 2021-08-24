@@ -14,10 +14,22 @@ fetch(API)
 	.then((res) => res.json())
 	.then((data) => {
 		generateList(data.results);
-		popup(data.results);
+		const employeeCards = document.querySelectorAll('.card');
+		for (let i = 0; i < employeeCards.length; i++) {
+			employeeCards[i].addEventListener('click', () => {
+				const selectedEmployee = data.results[i];
+				const modalContainer = document.querySelector('.modal-container');
+				modalWindow(selectedEmployee);
+				const closeButton = document.querySelector('.modal-close-btn');
+				closeButton.addEventListener('click', () => {
+					const modalContainer = document.querySelector('.modal-container');
+					modalContainer.style.display = 'none';
+				});
+			});
+		}
 	})
 	.then(search)
-	.catch((err) => console.log('sorry an error just occurred', error));
+	.catch((err) => console.log('sorry an error just occurred'));
 
 /**-----------------------------------
 //  HELPER FUNCTIONS
@@ -29,7 +41,6 @@ function search() {
 		`  <form action="#" method="get">
 	<input type="search" id="search-input" 
 	class="search-input" placeholder="Search...">
-
 	<input type="submit" value="&#x1F50D;"
 	 id="search-submit" class="search-submit">
 </form>`
@@ -52,44 +63,47 @@ function generateList(info) {
 	});
 }
 
-function popup(info) {
-	const employeeCards = document.querySelectorAll('.card');
-	employeeCards.forEach((employeeCard) =>
-		employeeCard.addEventListener('click', () => {
-			const modalContainer = document.querySelector('.modal-container');
-			modalWindow(employeeCards);
-			modalContainer.style.display = 'block';
-		})
-	);
-}
-
 function modalWindow(item) {
-	let modal = `
-	<div class="modal-container">
-		<div class="modal">
-			<button type="button" id="modal-close-btn" class="modal-close-btn"><strong>X</strong></button>
-			<div class="modal-info-container">
-				<img class="modal-img" src="" alt="profile picture">
-				<h3 id="name" class="modal-name cap">${data.name.title}  ${data.name.first}</h3>
-				<p class="modal-text">${data.email}</p>
-				<p class="modal-text cap">${data.location.city}</p>
-				<hr>
-				<p class="modal-text">(555) 555-5555</p>
-				<p class="modal-text">123 Portland Ave., Portland, OR 97204</p>
-				<p class="modal-text">Birthday: 10/21/2015</p>
-			</div>
-		</div>
-	`;
+	// https://elijahmanor.com/blog/format-js-dates-and-times
+	let date = new Date(item.dob.date).toLocaleDateString('en-US', {
+		weekday: 'long',
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric',
+	});
 
+	// https://stackoverflow.com/questions/18375929/validate-phone-number-using-javascript
+	// https://stackoverflow.com/questions/16702924/how-to-explain-1-2-in-javascript-when-using-regular-expression
+	let cell = item.cell;
+	console.log(cell);
+	function ValidatePhoneNumber(phoneNumber) {
+		const regex = /^\D*(\d{3})\D*(\d{3})\D*(\d{4})/;
+		let phone = phoneNumber.replace(regex, '($1)-$2-$3');
+		return phone;
+	}
+
+	let modal = `
+    <div class="modal-container">
+        <div class="modal">
+            <button type="button" id="modal-close-btn" class="modal-close-btn"><strong>X</strong></button>
+            <div class="modal-info-container">
+                <img class="modal-img" src="${
+									item.picture.large
+								}" alt="profile picture">
+                <h3 id="name" class="modal-name cap">${item.name.first} ${
+		item.name.last
+	}</h3>
+                <p class="modal-text">${item.email}</p>
+                <p class="modal-text cap">${item.location.city}</p>
+                <hr>
+                <p class="modal-text">${ValidatePhoneNumber(cell)}</p>
+                <p class="modal-text">${item.location.street.number} ${
+		item.location.street.name
+	}, ${item.location.city}, ${item.location.state} ${item.location.postcode}</p>
+                <p class="modal-text">Birthday: ${date}</p>
+            </div>
+        </div>
+    </div>
+	`;
 	GalleryMarkup.insertAdjacentHTML('afterend', modal);
 }
-
-/**-----------------------------------
-//  EVENT LISTENERS
- -------------------------------------*/
-// to close the modal popup
-const closeButton = document.querySelector('.modal-close-btn');
-closeButton.addEventListener('click', () => {
-	const modalContainer = document.querySelector('.modal-container');
-	modalContainer.style.display = 'none';
-});
